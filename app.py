@@ -2,18 +2,27 @@
 import os
 from tornado import web
 from tornado.ioloop import IOLoop
-from handlers import DefaultHandler
+from handlers import DefaultHandler, UploadHandler, PieceHandler, ChannelHandler, \
+    ChannelDetailHandler, ChannelPieceListHandler, SelfProfileHandler, UserProfileHandler, \
+    RegisterHandler, LoginHandler
 from settings import app_port, url_pre
 
 __author__ = 'zhouqi'
 
 routs = [
-    (r"/api/v1/user/([0-9]+)/item", UserItemListHandler),
-    (r"/api/v1/user/([0-9]+)/item/([0-9]+)", UserItemHandler),
-    (r"/api/v1/user/([0-9]+)/item/([0-9]+)/order", UserItemOrderHandler),
-    (r"/api/v1/user/([0-9]+)/item/([0-9]+)/order/([0-9]+)", UserItemOrderHandler),
-    (r"/api/v1/index/gen/([0-9]+)", IndexGenHandler),
-    (r"/api/v1/device/([0-9a-zA-Z]+)/notification", DeviceNotificationHandler),
+    (r"/api/v1/user/login", LoginHandler),
+    (r"/api/v1/user/register", RegisterHandler),
+    (r"/api/v1/user/([0-9]+)/profile", UserProfileHandler),
+    (r"/api/v1/user/profile", SelfProfileHandler),
+
+    (r"/api/v1/channel/([0-9]+)/piece/list", ChannelPieceListHandler),
+    (r"/api/v1/channel/([0-9]+)", ChannelDetailHandler),
+    (r"/api/v1/channel", ChannelHandler),
+
+    (r"/api/v1/piece", PieceHandler),
+
+    (r"/api/v1/upload", UploadHandler),
+
     (r"/", DefaultHandler),
 ]
 

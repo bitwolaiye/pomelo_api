@@ -60,3 +60,11 @@ CREATE TABLE messages
   user_id      INTEGER   NOT NULL REFERENCES users ON DELETE CASCADE,
   PRIMARY KEY (message_id)
 );
+
+CREATE TABLE devices
+(
+  device_id    SERIAL  NOT NULL,
+  device_token TEXT,
+  user_id      INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
+  PRIMARY KEY (device_id)
+);

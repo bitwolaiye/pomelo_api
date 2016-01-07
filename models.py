@@ -54,3 +54,38 @@ connection = Connection(host=db_host, database=db_name, user=db_user, port=db_po
 
 class BaseModel(object):
     pass
+
+
+class User(object):
+    profile_fields = ['user_name', 'user_gender']
+    self_profile_fields = ['user_name', 'user_gender']
+
+    def login(self, user_id):
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            cur.execute('select * from users where user_id=%s', [user_id])
+            cur.fetchall()
+        return 'token'
+
+    def register(self):
+        user_id = 10000
+        return user_id, 'token'
+
+    def get_profile(self, user_id):
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.profile_fields) \
+                  + ' from users where user_id=%s'
+            cur.execute(sql, [user_id])
+            res = cur.fetchall()
+        return format_records_to_json(self.profile_fields, res)[0]
+
+
+    def get_self_profile(self, user_id):
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.self_profile_fields) \
+                  + ' from users where user_id=%s'
+            cur.execute(sql, [user_id])
+            res = cur.fetchall()
+        return format_records_to_json(self.self_profile_fields, res)[0]
