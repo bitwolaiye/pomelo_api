@@ -27,7 +27,7 @@ CREATE TABLE pieces
   piece_time  TIMESTAMP NOT NULL,
   user_id     INTEGER   NOT NULL REFERENCES users ON DELETE CASCADE,
   channel_id  INTEGER   NOT NULL REFERENCES channels ON DELETE CASCADE,
-  PRIMARY KEY (channel_id)
+  PRIMARY KEY (piece_id)
 );
 
 CREATE TABLE likes

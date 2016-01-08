@@ -48,6 +48,13 @@ def format_records_to_json(fields, res, aliases=None):
     return result
 
 
+def format_sql_fields(l, sections):
+    def format(obj, table_names):
+        return reduce(lambda x, y: x + y,
+                      [['.'.join([table_names[i], each]) for each in l[s:e + 1]] for i, (s, e) in
+                       enumerate(sections)], [])
+    return format
+
 connection = Connection(host=db_host, database=db_name, user=db_user, port=db_port,
                         password=db_password)
 
@@ -88,3 +95,39 @@ class User(object):
             cur.execute(sql, [user_id])
             res = cur.fetchall()
         return format_records_to_json(self.self_profile_fields, res)[0]
+
+class Channel(object):
+    pass
+
+
+class Piece(object):
+    piece_list_fields = ['piece_id', 'piece_text', 'user_id', 'user_name', 'user_gender']
+    piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 2), (3, 4)])
+
+    def create(self, user_id, channel_id, piece_text, piece_pic=None, piece_voice=None,
+               piece_video=None):
+        user_id = int(user_id)
+        channel_id = int(channel_id)
+
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'insert into pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now()) RETURNING piece_id;'
+            cur.execute(sql, (channel_id, user_id, piece_text))
+            return cur.fetchone()[0]
+
+    def list(self, channel_id, page=None, row_per_page=None):
+        if page is None: page = 1
+        if row_per_page is None: row_per_page = 20
+
+        channel_id = int(channel_id)
+        page = int(page)
+        row_per_page = int(row_per_page)
+
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.piece_list_sql_fields(['a', 'b'])) + \
+                  ' from pieces a, users b where a.user_id=b.user_id and channel_id=%s ' \
+                  ' order by piece_id desc LIMIT %s OFFSET %s;'
+            cur.execute(sql, [channel_id, row_per_page, (page - 1) * row_per_page])
+            res = cur.fetchall()
+        return format_records_to_json(self.piece_list_fields, res)

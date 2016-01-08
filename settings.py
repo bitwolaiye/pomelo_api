@@ -14,8 +14,10 @@ url_pre = '/pomelo'
 notification_key_path = 'key.pem'
 notification_cert_path = 'cert.pem'
 
+image_path = 'images'
+
 settings_fields = ['db_name', 'db_user', 'db_port', 'db_password', 'db_host', 'url_pre',
-                   'notification_key_path', 'notification_cert_path']
+                   'notification_key_path', 'notification_cert_path', 'image_path']
 
 def load_addition_config():
     try:
