@@ -80,7 +80,6 @@ class User(object):
             res = cur.fetchall()
         return format_records_to_json(self.profile_fields, res)[0]
 
-
     def get_self_profile(self, user_id):
         with connection.gen_db() as db:
             cur = db.cursor()

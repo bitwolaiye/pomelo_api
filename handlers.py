@@ -2,7 +2,7 @@
 from tornado.web import RequestHandler
 import json
 from apns import APNs, Frame, Payload
-from models import format_records_to_json
+from models import format_records_to_json, User
 from settings import notification_key_path, notification_cert_path
 
 __author__ = 'zhouqi'
@@ -40,7 +40,8 @@ class UserProfileHandler(BaseHandler):
 
 class SelfProfileHandler(BaseHandler):
     def get(self):
-        self.write({'result': True})
+        user = User()
+        self.write(user.get_self_profile(1))
 
     def post(self):
         self.write({'result': True})
