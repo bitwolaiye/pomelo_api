@@ -16,3 +16,15 @@ notification_cert_path = 'cert.pem'
 
 settings_fields = ['db_name', 'db_user', 'db_port', 'db_password', 'db_host', 'url_pre',
                    'notification_key_path', 'notification_cert_path']
+
+def load_addition_config():
+    try:
+        from addition_settings import settings_dict
+        for field in settings_fields:
+            if field in settings_dict:
+                globals()[field] = settings_dict[field]
+    except ImportError as ex:
+        print(ex)
+
+
+load_addition_config()
