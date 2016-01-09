@@ -53,7 +53,9 @@ def format_sql_fields(l, sections):
         return reduce(lambda x, y: x + y,
                       [['.'.join([table_names[i], each]) for each in l[s:e + 1]] for i, (s, e) in
                        enumerate(sections)], [])
+
     return format
+
 
 connection = Connection(host=db_host, database=db_name, user=db_user, port=db_port,
                         password=db_password)
@@ -96,8 +98,35 @@ class User(object):
             res = cur.fetchall()
         return format_records_to_json(self.self_profile_fields, res)[0]
 
+
 class Channel(object):
-    pass
+    chance_detail_fields = ['channel_id', 'channel_name', 'channel_user_id', 'user_name',
+                            'user_gender']
+    chance_detail_sql_fields = format_sql_fields(chance_detail_fields, [(0, 2), (3, 4)])
+
+    chance_list_fields = ['channel_id', 'channel_name', 'channel_user_id', 'user_name',
+                            'user_gender']
+    chance_list_sql_fields = format_sql_fields(chance_list_fields, [(0, 2), (3, 4)])
+
+    def detail(self, channel_id):
+        channel_id = int(channel_id)
+
+        with connection.gen_db() as  db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.chance_detail_sql_fields(['a', 'b'])) + \
+                  ' FROM channels a,users b where a.channel_user_id=b.user_id and channel_id=%s'
+            cur.execute(sql, [channel_id])
+            res = cur.fetchall()
+        return format_records_to_json(self.chance_detail_fields, res)[0]
+
+    def list(self):
+        with connection.gen_db() as  db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.chance_detail_sql_fields(['a', 'b'])) + \
+                  ' FROM channels a,users b where a.channel_user_id=b.user_id'
+            cur.execute(sql)
+            res = cur.fetchall()
+        return format_records_to_json(self.chance_detail_fields, res)
 
 
 class Piece(object):

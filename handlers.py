@@ -3,7 +3,7 @@ from tornado.web import RequestHandler
 import json
 import os
 from apns import APNs, Frame, Payload
-from models import format_records_to_json, User, Piece
+from models import format_records_to_json, User, Piece, Channel
 from settings import notification_key_path, notification_cert_path, image_path
 
 __author__ = 'zhouqi'
@@ -67,13 +67,18 @@ class SelfProfileHandler(BaseHandler):
 
 
 class ChannelHandler(BaseHandler):
+    def get(self):
+        channel = Channel()
+        self.write({'list': channel.list()})
+
     def post(self):
         self.write({'result': True})
 
 
 class ChannelDetailHandler(BaseHandler):
     def get(self, channel_id):
-        self.write({'result': True})
+        channel = Channel()
+        self.write(channel.detail(channel_id))
 
     def post(self, channel_id):
         self.write({'result': True})
