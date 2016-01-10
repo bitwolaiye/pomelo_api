@@ -12,8 +12,8 @@ __author__ = 'zhouqi'
 routs = [
     (r"/api/v1/user/login", LoginHandler),
     (r"/api/v1/user/register", RegisterHandler),
-    (r"/api/v1/user/([0-9]+)/profile", UserProfileHandler),
-    (r"/api/v1/user/profile", SelfProfileHandler),
+    (r"/api/v1/user/([0-9]+)", UserProfileHandler),
+    (r"/api/v1/user", SelfProfileHandler),
 
     (r"/api/v1/channel/([0-9]+)/piece/list", ChannelPieceListHandler),
     (r"/api/v1/channel/([0-9]+)", ChannelDetailHandler),

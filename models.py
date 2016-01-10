@@ -130,8 +130,8 @@ class Channel(object):
 
 
 class Piece(object):
-    piece_list_fields = ['piece_id', 'piece_text', 'user_id', 'user_name', 'user_gender']
-    piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 2), (3, 4)])
+    piece_list_fields = ['piece_id', 'piece_text', 'piece_time', 'user_id', 'user_name', 'user_gender']
+    piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 3), (4, 5)])
 
     def create(self, user_id, channel_id, piece_text, piece_pic=None, piece_voice=None,
                piece_video=None):

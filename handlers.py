@@ -54,7 +54,8 @@ class RegisterHandler(BaseHandler):
 
 class UserProfileHandler(BaseHandler):
     def get(self, user_id):
-        self.write({'result': True})
+        user = User()
+        self.write(user.get_profile(user_id))
 
 
 class SelfProfileHandler(BaseHandler):
