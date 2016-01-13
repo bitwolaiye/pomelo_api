@@ -160,3 +160,36 @@ class Piece(object):
             cur.execute(sql, [channel_id, row_per_page, (page - 1) * row_per_page])
             res = cur.fetchall()
         return format_records_to_json(self.piece_list_fields, res)
+
+
+class Comment(object):
+    comment_list_fields = ['comment_id', 'comment_text', 'comment_time', 'user_id', 'user_name', 'user_gender']
+    comment_list_sql_fields = format_sql_fields(comment_list_fields, [(0, 3), (4, 5)])
+
+    def create(self, user_id, piece_id, comment_text, comment_pic=None, comment_voice=None,
+               comment_video=None):
+        user_id = int(user_id)
+        piece_id = int(piece_id)
+
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'insert into comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now()) RETURNING comment_id;'
+            cur.execute(sql, (piece_id, user_id, comment_text))
+            return cur.fetchone()[0]
+
+    def list(self, piece_id, page=None, row_per_page=None):
+        if page is None: page = 1
+        if row_per_page is None: row_per_page = 20
+
+        piece_id = int(piece_id)
+        page = int(page)
+        row_per_page = int(row_per_page)
+
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            sql = 'select ' + ', '.join(self.comment_list_sql_fields(['a', 'b'])) + \
+                  ' from comments a, users b where a.user_id=b.user_id and comment_id=%s ' \
+                  ' order by comment_id desc LIMIT %s OFFSET %s;'
+            cur.execute(sql, [piece_id, row_per_page, (page - 1) * row_per_page])
+            res = cur.fetchall()
+        return format_records_to_json(self.comment_list_fields, res)

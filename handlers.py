@@ -3,7 +3,7 @@ from tornado.web import RequestHandler
 import json
 import os
 from apns import APNs, Frame, Payload
-from models import format_records_to_json, User, Piece, Channel
+from models import format_records_to_json, User, Piece, Channel, Comment
 from settings import notification_key_path, notification_cert_path, image_path
 
 __author__ = 'zhouqi'
@@ -104,6 +104,24 @@ class PieceHandler(BaseHandler):
         piece_id = piece.create(self.user_id, channel_id, piece_text)
         self.write({'piece_id': piece_id})
 
+
+class CommentHandler(BaseHandler):
+    @check_token
+    def post(self, piece_id):
+        comment_text = self.get_argument('comment_text')
+
+        comment = Comment()
+        comment_id = comment.create(self.user_id, piece_id, comment_text)
+        self.write({'comment_id': comment_id})
+
+
+class CommentListHandler(BaseHandler):
+    def get(self, piece_id):
+        page = self.get_argument('page', None)
+        row_per_page = self.get_argument('row_per_page', None)
+
+        comment = Comment()
+        self.write({'list': comment.list(piece_id, page, row_per_page)})
 
 
 class UploadHandler(BaseHandler):
