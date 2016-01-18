@@ -44,12 +44,22 @@ class DefaultHandler(BaseHandler):
 
 class LoginHandler(BaseHandler):
     def post(self):
-        self.write({'result': True})
+        user_name = self.get_argument('user_name')
+        user = User()
+        user_id = user.get_user_id_from_name(user_name)
+        if user_id > 0:
+            token = user.login(user_id)
+            self.write({'user_id': user_id, 'token': token})
+        else:
+            self.write({'err_no': 1, 'err_msg': 'user is not exists'})
 
 
 class RegisterHandler(BaseHandler):
     def post(self):
-        self.write({'result': True})
+        user_name = self.get_argument('user_name')
+        user = User()
+        user_id, token = user.register(user_name)
+        self.write({'user_id': user_id, 'token': token})
 
 
 class UserProfileHandler(BaseHandler):

@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+import os
+import random
+import shutil
 from datetime import datetime, date
 
 from decimal import Decimal
+
+import rocksdb
+import struct
 
 from settings import db_host, db_name, db_password, db_user, db_port
 from utils.connection import Connection
@@ -69,16 +75,37 @@ class User(object):
     profile_fields = ['user_name', 'user_gender']
     self_profile_fields = ['user_name', 'user_gender']
 
+    def get_user_id_from_name(self, user_name):
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            cur.execute('select user_id from users where user_name=%s', [user_name])
+            res = cur.fetchall()
+            if len(res) == 1:
+                return res[0][0]
+            else:
+                return -1
+
     def login(self, user_id):
         with connection.gen_db() as db:
             cur = db.cursor()
             cur.execute('select * from users where user_id=%s', [user_id])
             cur.fetchall()
-        return 'token'
+        self.check_password()
+        token = Token().update(user_id, 0)
+        return token
 
-    def register(self):
+    def check_password(self):
+        return True
+
+    def register(self, user_name):
         user_id = 10000
-        return user_id, 'token'
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            cur.execute('insert INTO users(user_name) VALUES (%s) RETURNING user_id;', [user_name, ])
+            res = cur.fetchall()
+            user_id = res[0][0]
+        token = Token().update(user_id, 0)
+        return user_id, token
 
     def get_profile(self, user_id):
         with connection.gen_db() as db:
@@ -193,3 +220,109 @@ class Comment(object):
             cur.execute(sql, [piece_id, row_per_page, (page - 1) * row_per_page])
             res = cur.fetchall()
         return format_records_to_json(self.comment_list_fields, res)
+
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Token():
+    __metaclass__ = Singleton
+    db_file = 'db/data/token.db'
+    test_db_file = 'db/data/test_token.db'
+    test_flag = False
+    _token_key_pre = b't'
+    _user_key_pre = b'u'
+
+    def __init__(self, *args, **kwargs):
+        if 'test' in kwargs:
+            Token.test_flag = True
+            self.db = rocksdb.DB(Token.test_db_file, rocksdb.Options(create_if_missing=True))
+        else:
+            self.db = rocksdb.DB(Token.db_file, rocksdb.Options(create_if_missing=True))
+
+    def clean_db(self):
+        if Token.test_flag:
+            self.db = None
+            shutil.rmtree(self.test_db_file)
+            self.db = rocksdb.DB(Token.test_db_file, rocksdb.Options(create_if_missing=True))
+
+    def get_user(self, token):
+        num = base62_decode(token)
+        r = self.db.get(self._token_key_pre + struct.pack('<Q', num))
+        if r is not None:
+            return struct.unpack('<Q', r[:8])[0], struct.unpack('<Q', r[8:16])[0]
+        else:
+            return -1, -1
+
+    def get_number(self, user_id, device_id):
+        key = struct.pack('<Q', user_id) + struct.pack('<Q', device_id)
+        return struct.unpack('<Q', self.db.get(self._user_key_pre + key))[0]
+
+    def exists(self, user_id, device_id):
+        return self.db.get(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id)) is not None
+
+    def exists_number(self, num):
+        return self.db.get(self._token_key_pre + struct.pack('<Q', num)) is not None
+
+    def gen_number(self, user_id, device_id):
+        if self.exists(user_id, device_id):
+            pass
+        ran = random.randint(0, 1<<64-1)
+        while self.exists_number(ran):
+            ran = random.randint(0, 1<<64-1)
+        return ran
+
+    def update(self, user_id, device_id):
+        if self.exists(user_id, device_id):
+            num = self.get_number(user_id, device_id)
+            self.db.delete(self._token_key_pre + struct.pack('<Q', num))
+            self.db.delete(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
+        num = self.gen_number(user_id, device_id)
+        self.db.put(self._token_key_pre + struct.pack('<Q', num), struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
+        self.db.put(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id), struct.pack('<Q', num))
+        return base62_encode(num)
+
+
+ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def base62_encode(num, alphabet=ALPHABET):
+    """Encode a number in Base X
+
+    `num`: The number to encode
+    `alphabet`: The alphabet to use for encoding
+    """
+    if (num == 0):
+        return alphabet[0]
+    arr = []
+    base = len(alphabet)
+    while num:
+        rem = num % base
+        num = num // base
+        arr.append(alphabet[rem])
+    arr.reverse()
+    return ''.join(arr)
+
+def base62_decode(string, alphabet=ALPHABET):
+    """Decode a Base X encoded string into the number
+
+    Arguments:
+    - `string`: The encoded string
+    - `alphabet`: The alphabet to use for encoding
+    """
+    base = len(alphabet)
+    strlen = len(string)
+    num = 0
+
+    idx = 0
+    for char in string:
+        power = (strlen - (idx + 1))
+        num += alphabet.index(char) * (base ** power)
+        idx += 1
+
+    return num
+
+
