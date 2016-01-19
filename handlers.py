@@ -3,7 +3,7 @@ from tornado.web import RequestHandler
 import json
 import os
 from apns import APNs, Frame, Payload
-from models import format_records_to_json, User, Piece, Channel, Comment
+from models import format_records_to_json, User, Piece, Channel, Comment, Token
 from settings import notification_key_path, notification_cert_path, image_path
 
 __author__ = 'zhouqi'
@@ -19,8 +19,8 @@ def check_token(func):
     def checker(handler, *args, **kwargs):
         try:
             headers = handler.request.headers
-            if token_key in headers and headers[token_key] in token_dict:
-                handler.user_id = token_dict[headers[token_key]]
+            if token_key in headers:
+                handler.user_id, device_id = Token().get_user(headers[token_key])
             else:
                 handler.user_id = -1
         except:
