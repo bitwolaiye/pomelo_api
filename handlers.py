@@ -69,6 +69,7 @@ class UserProfileHandler(BaseHandler):
 
 
 class SelfProfileHandler(BaseHandler):
+    @check_token
     def get(self):
         user = User()
         self.write(user.get_self_profile(self.user_id))
