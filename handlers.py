@@ -71,7 +71,7 @@ class UserProfileHandler(BaseHandler):
 class SelfProfileHandler(BaseHandler):
     def get(self):
         user = User()
-        self.write(user.get_self_profile(1))
+        self.write(user.get_self_profile(self.user_id))
 
     def post(self):
         self.write({'result': True})
