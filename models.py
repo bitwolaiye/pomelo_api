@@ -215,7 +215,7 @@ class Comment(object):
         with connection.gen_db() as db:
             cur = db.cursor()
             sql = 'select ' + ', '.join(self.comment_list_sql_fields(['a', 'b'])) + \
-                  ' from comments a, users b where a.user_id=b.user_id and comment_id=%s ' \
+                  ' from comments a, users b where a.user_id=b.user_id and piece_id=%s ' \
                   ' order by comment_id desc LIMIT %s OFFSET %s;'
             cur.execute(sql, [piece_id, row_per_page, (page - 1) * row_per_page])
             res = cur.fetchall()
