@@ -167,7 +167,7 @@ class Piece(object):
 
         with connection.gen_db() as db:
             cur = db.cursor()
-            sql = 'insert into pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now()) RETURNING piece_id;'
+            sql = "insert into pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING piece_id;"
             cur.execute(sql, (channel_id, user_id, piece_text))
             return cur.fetchone()[0]
 
@@ -200,7 +200,7 @@ class Comment(object):
 
         with connection.gen_db() as db:
             cur = db.cursor()
-            sql = 'insert into comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now()) RETURNING comment_id;'
+            sql = "insert into comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING comment_id;"
             cur.execute(sql, (piece_id, user_id, comment_text))
             return cur.fetchone()[0]
 
