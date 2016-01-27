@@ -144,9 +144,9 @@ class UploadHandler(BaseHandler):
 
     def _save_file(self, f):
         file_name = f['filename']
-        pre = file_name.split('.')[-2][:-3]
+        pre = file_name.split('.')[-2][-3:]
         sub = image_path.split('/') + ['tmp', pre, ]
-        for i in xrange(len(sub) - 1):
+        for i in xrange(len(sub)):
             sub_p = '/'.join(sub[:i + 1])
             if not os.path.exists(sub_p):
                 os.mkdir(sub_p)
