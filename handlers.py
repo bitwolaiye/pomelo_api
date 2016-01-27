@@ -143,8 +143,12 @@ class UploadHandler(BaseHandler):
         self.write({'result': True})
 
     def _save_file(self, f):
-        p = image_path + '/1'
-        if not os.path.exists(p):
-            os.mkdir(p)
-        with open(p + '/' + f['filename'], 'wb') as up:
+        file_name = f['filename']
+        pre = file_name.split('.')[-2][:-3]
+        sub = image_path.split('/') + ['tmp', pre, ]
+        for i in xrange(len(sub) - 1):
+            sub_p = '/'.join(sub[:i + 1])
+            if not os.path.exists(sub_p):
+                os.mkdir(sub_p)
+        with open('/'.join(sub) + '/' + file_name, 'wb') as up:
             up.write(f['body'])
