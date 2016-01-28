@@ -143,10 +143,11 @@ class User(object):
                 shutil.move(src_path, dst_path)
                 image = Image.open(dst_path)
                 origin_size = image.size
+                width, height = origin_size
                 if origin_size[0] > 150:
-                    origin_size[1] = origin_size[1] * 1.0 / origin_size[0] * 150
-                    origin_size[0] = 150
-                image.thumbnail(origin_size)
+                    height = origin_size[1] * 1.0 / origin_size[0] * 150
+                    width = 150
+                image.thumbnail((width, height))
                 image.save(thumb_path, 'JPEG')
                 sql = 'update users set user_avatar=%s where user_id=%s;'
                 with connection.gen_db() as db:
