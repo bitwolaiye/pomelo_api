@@ -9,6 +9,8 @@ from decimal import Decimal
 import rocksdb
 import struct
 
+from PIL import Image
+
 from settings import db_host, db_name, db_password, db_user, db_port, image_path
 from utils.connection import Connection
 
@@ -130,13 +132,21 @@ class User(object):
             pre = user_avatar.split('.')[-2][-3:]
             src_path = '/'.join([image_path, 'tmp', pre, user_avatar])
             if os.path.exists(src_path):
-                dst_path = '/'.join([image_path, 'avatar', pre, user_avatar])
+                dst_path = '/'.join([image_path, 'avatar', 'origin', pre, user_avatar])
+                thumb_path = '/'.join([image_path, 'avatar', 'thumb', pre, user_avatar])
                 sub = dst_path.split('/')
                 for i in xrange(len(sub) - 1):
                     sub_p = '/'.join(sub[:i + 1])
                     if not os.path.exists(sub_p):
                         os.mkdir(sub_p)
                 shutil.move(src_path, dst_path)
+                image = Image.open(dst_path)
+                origin_size = image.size
+                if origin_size[0] > 150:
+                    origin_size[1] = origin_size[1] * 1.0 / origin_size[0] * 150
+                    origin_size[0] = 150
+                image.thumbnail(origin_size)
+                image.save(thumb_path, 'JPEG')
                 sql = 'update users set user_avatar=%s where user_id=%s;'
                 with connection.gen_db() as db:
                     cur = db.cursor()
