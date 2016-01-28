@@ -74,7 +74,11 @@ class SelfProfileHandler(BaseHandler):
         user = User()
         self.write(user.get_self_profile(self.user_id))
 
+    @check_token
     def post(self):
+        user = User()
+        user_avatar = self.get_argument('user_avatar', default=None)
+        user.update_profile(self.user_id, user_avatar=user_avatar)
         self.write({'result': True})
 
 

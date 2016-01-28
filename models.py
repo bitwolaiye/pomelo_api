@@ -9,7 +9,7 @@ from decimal import Decimal
 import rocksdb
 import struct
 
-from settings import db_host, db_name, db_password, db_user, db_port
+from settings import db_host, db_name, db_password, db_user, db_port, image_path
 from utils.connection import Connection
 
 __author__ = 'zhouqi'
@@ -124,6 +124,25 @@ class User(object):
             cur.execute(sql, [user_id])
             res = cur.fetchall()
         return format_records_to_json(self.self_profile_fields, res)[0]
+
+    def update_profile(self, user_id, user_name=None, user_password=None, user_gender=None, user_avatar=None):
+        if user_avatar is not None:
+            pre = user_avatar.split('.')[-2][-3:]
+            src_path = '/'.join([image_path, 'tmp', pre, user_avatar])
+            if os.path.exists(src_path):
+                dst_path = '/'.join([image_path, 'avatar', pre, user_avatar])
+                sub = dst_path.split('/')
+                for i in xrange(len(sub)):
+                    sub_p = '/'.join(sub[:i + 1])
+                    if not os.path.exists(sub_p):
+                        os.mkdir(sub_p)
+                shutil.move(src_path, dst_path)
+                sql = 'update users set user_avatar=%s where user_id=%s;'
+                with connection.gen_db() as db:
+                    cur = db.cursor()
+                    cur.execute(sql, [user_avatar, user_id])
+                    db.commit()
+        return True
 
 
 class Channel(object):
