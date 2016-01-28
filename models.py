@@ -134,11 +134,12 @@ class User(object):
             if os.path.exists(src_path):
                 dst_path = '/'.join([image_path, 'avatar', 'origin', pre, user_avatar])
                 thumb_path = '/'.join([image_path, 'avatar', 'thumb', pre, user_avatar])
-                sub = dst_path.split('/')
-                for i in xrange(len(sub) - 1):
-                    sub_p = '/'.join(sub[:i + 1])
-                    if not os.path.exists(sub_p):
-                        os.mkdir(sub_p)
+                for p in [dst_path, thumb_path]:
+                    sub = p.split('/')
+                    for i in xrange(len(sub) - 1):
+                        sub_p = '/'.join(sub[:i + 1])
+                        if not os.path.exists(sub_p):
+                            os.mkdir(sub_p)
                 shutil.move(src_path, dst_path)
                 image = Image.open(dst_path)
                 origin_size = image.size
