@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import StringIO
+
 from PIL import Image
 from tornado.web import RequestHandler
 import json
@@ -155,5 +157,5 @@ class UploadHandler(BaseHandler):
             sub_p = '/'.join(sub[:i + 1])
             if not os.path.exists(sub_p):
                 os.mkdir(sub_p)
-        image = Image.open(f['body'])
+        image = Image.open(StringIO.StringIO(f['body']))
         image.save('/'.join(sub) + '/' + file_name)
