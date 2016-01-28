@@ -72,8 +72,8 @@ class BaseModel(object):
 
 
 class User(object):
-    profile_fields = ['user_name', 'user_gender']
-    self_profile_fields = ['user_name', 'user_gender']
+    profile_fields = ['user_name', 'user_gender', 'user_avatar']
+    self_profile_fields = ['user_name', 'user_gender', 'user_avatar']
 
     def get_user_id_from_name(self, user_name):
         with connection.gen_db() as db:
