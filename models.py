@@ -145,10 +145,10 @@ class User(object):
                 origin_size = image.size
                 if origin_size[0] > origin_size[1]:
                     delta = (origin_size[0] - origin_size[1]) /2
-                    image = image.crop(delta, 0, origin_size[0] - delta, origin_size[1])
+                    image = image.crop((delta, 0, origin_size[0] - delta, origin_size[1]))
                 elif origin_size[0] < origin_size[1]:
                     delta = (origin_size[1] - origin_size[0]) /2
-                    image = image.crop(0, delta, origin_size[0], origin_size[1] - delta)
+                    image = image.crop((0, delta, origin_size[0], origin_size[1] - delta))
                 image.save(dst_path)
                 os.remove(src_path)
                 origin_size = image.size
