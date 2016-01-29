@@ -149,6 +149,10 @@ class User(object):
                 elif origin_size[0] < origin_size[1]:
                     delta = (origin_size[1] - origin_size[0]) /2
                     image = image.crop((0, delta, origin_size[0], origin_size[1] - delta))
+                if origin_size[0] > 612:
+                    height = origin_size[1] * 1.0 / origin_size[0] * 612
+                    width = 612
+                    image.thumbnail((width, height))
                 image.save(dst_path)
                 os.remove(src_path)
                 origin_size = image.size
@@ -156,7 +160,7 @@ class User(object):
                 if origin_size[0] > 150:
                     height = origin_size[1] * 1.0 / origin_size[0] * 150
                     width = 150
-                image.thumbnail((width, height))
+                    image.thumbnail((width, height))
                 image.save(thumb_path, 'JPEG')
                 sql = 'update users set user_avatar=%s where user_id=%s;'
                 with connection.gen_db() as db:
