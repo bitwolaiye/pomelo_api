@@ -171,13 +171,13 @@ class User(object):
 
 
 class Channel(object):
-    chance_detail_fields = ['channel_id', 'channel_name', 'channel_user_id', 'user_name',
+    chance_detail_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id', 'user_name',
                             'user_gender', 'user_avatar']
-    chance_detail_sql_fields = format_sql_fields(chance_detail_fields, [(0, 2), (3, 5)])
+    chance_detail_sql_fields = format_sql_fields(chance_detail_fields, [(0, 3), (4, 6)])
 
-    chance_list_fields = ['channel_id', 'channel_name', 'channel_user_id', 'user_name',
+    chance_list_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id', 'user_name',
                             'user_gender', 'user_avatar']
-    chance_list_sql_fields = format_sql_fields(chance_list_fields, [(0, 2), (3, 5)])
+    chance_list_sql_fields = format_sql_fields(chance_list_fields, [(0, 3), (4, 6)])
 
     def detail(self, channel_id):
         channel_id = int(channel_id)
