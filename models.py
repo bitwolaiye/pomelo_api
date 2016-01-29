@@ -140,8 +140,17 @@ class User(object):
                         sub_p = '/'.join(sub[:i + 1])
                         if not os.path.exists(sub_p):
                             os.mkdir(sub_p)
-                shutil.move(src_path, dst_path)
-                image = Image.open(dst_path)
+                # shutil.move(src_path, dst_path)
+                image = Image.open(src_path)
+                origin_size = image.size
+                if origin_size[0] > origin_size[1]:
+                    delta = (origin_size[0] - origin_size[1]) /2
+                    image = image.crop(delta, 0, origin_size[0] - delta, origin_size[1])
+                elif origin_size[0] < origin_size[1]:
+                    delta = (origin_size[1] - origin_size[0]) /2
+                    image = image.crop(0, delta, origin_size[0], origin_size[1] - delta)
+                image.save(dst_path)
+                os.remove(src_path)
                 origin_size = image.size
                 width, height = origin_size
                 if origin_size[0] > 150:
