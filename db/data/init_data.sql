@@ -1,7 +1,7 @@
-INSERT INTO users(user_id, user_name, user_gender) VALUES (1, 'bitwolaiye', 1);
-INSERT INTO users(user_id, user_name, user_gender) VALUES (2, 'bitning', 0);
+INSERT INTO users(user_id, user_name, nick_name, user_gender, user_password) VALUES (1, 'bitwolaiye', 'bitwolaiye', 1, '!!');
+INSERT INTO users(user_id, user_name, nick_name, user_gender, user_password) VALUES (2, 'bitning', 'bitning', 0, '!!');
 
-INSERT INTO users(user_id, user_name, user_gender) VALUES (9, '柚小秘', 0);
+INSERT INTO users(user_id, user_name, nick_name, user_gender, user_password) VALUES (9, 'pomelo', '柚小秘', 0, '!!');
 
 SELECT setval('users_user_id_seq', 10000);
 

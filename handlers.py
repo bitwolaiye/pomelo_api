@@ -142,6 +142,26 @@ class CommentListHandler(BaseHandler):
         self.write({'list': comment.list(piece_id, page, row_per_page)})
 
 
+class PieceLikeHandler(BaseHandler):
+    @check_token
+    def post(self, piece_id):
+        status = self.get_argument('status')
+
+        comment = Comment()
+        comment_id = comment.create(self.user_id, piece_id, comment_text)
+        self.write({'comment_id': comment_id})
+
+
+class CommentLikeHandler(BaseHandler):
+    @check_token
+    def post(self, piece_id):
+        comment_text = self.get_argument('comment_text')
+
+        comment = Comment()
+        comment_id = comment.create(self.user_id, piece_id, comment_text)
+        self.write({'comment_id': comment_id})
+
+
 class UploadHandler(BaseHandler):
     @check_token
     def post(self):

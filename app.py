@@ -21,7 +21,10 @@ routs = [
 
     (r"/api/v1/piece/([0-9]+)/comment/list", CommentListHandler),
     (r"/api/v1/piece/([0-9]+)/comment", CommentHandler),
+    (r"/api/v1/piece/([0-9]+)/like", PieceLikeHandler),
     (r"/api/v1/piece", PieceHandler),
+
+    (r"/api/v1/comment/([0-9]+)/like", CommentLikeHandler),
 
     (r"/api/v1/upload", UploadHandler),
 

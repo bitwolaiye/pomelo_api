@@ -265,6 +265,59 @@ class Comment(object):
             res = cur.fetchall()
         return format_records_to_json(self.comment_list_fields, res)
 
+
+class PieceLike(object):
+    def like(self, piece_id, user_id, status=1):
+        if status not in [1, -1]:
+            return False
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            res = cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id]).fetchall()
+            if len(res) == 1:
+                cur_status = res[0][1]
+                if status == cur_status:
+                    pass
+                else:
+                    if status == 1:
+                        cur.execute('update piece_likes set status=%s WHERE piece_id=%s and user_id=%s;', [status, piece_id, user_id])
+                        cur.execute('update pieces set like_cnt=like_cnt+1 WHERE piece_id=%s', [piece_id])
+                    else:
+                        cur.execute('update piece_likes set status=%s WHERE piece_id=%s and user_id=%s;', [status, piece_id, user_id])
+                        cur.execute('update pieces set like_cnt=like_cnt-1 WHERE piece_id=%s', [piece_id])
+            else:
+                if status == 1:
+                    cur.execute('insert INTO piece_likes(piece_id, user_id, status) VALUES (%s, %s, %s);', [piece_id, user_id, status])
+                    cur.execute('update pieces set like_cnt=like_cnt+1 WHERE piece_id=%s', [piece_id])
+            db.commit()
+        return True
+
+
+class CommentLike(object):
+    def like(self, comment_id, user_id, status=1):
+        if status not in [1, -1]:
+            return False
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            res = cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id]).fetchall()
+            if len(res) == 1:
+                cur_status = res[0][1]
+                if status == cur_status:
+                    pass
+                else:
+                    if status == 1:
+                        cur.execute('update comment_likes set status=%s WHERE comment_id=%s and user_id=%s;', [status, comment_id, user_id])
+                        cur.execute('update comments set like_cnt=like_cnt+1 WHERE comment_id=%s', [comment_id])
+                    else:
+                        cur.execute('update comment_likes set status=%s WHERE comment_id=%s and user_id=%s;', [status, comment_id, user_id])
+                        cur.execute('update comments set like_cnt=like_cnt-1 WHERE comment_id=%s', [comment_id])
+            else:
+                if status == 1:
+                    cur.execute('insert INTO comment_likes(comment_id, user_id, status) VALUES (%s, %s, %s);', [comment_id, user_id, status])
+                    cur.execute('update comments set like_cnt=like_cnt+1 WHERE comment_id=%s', [comment_id])
+            db.commit()
+        return True
+
+
 class Singleton(type):
     _instances = {}
     def __call__(cls, *args, **kwargs):
