@@ -6,7 +6,8 @@ from tornado.web import RequestHandler
 import json
 import os
 from apns import APNs, Frame, Payload
-from models import format_records_to_json, User, Piece, Channel, Comment, Token
+from models import format_records_to_json, User, Piece, Channel, Comment, Token, PieceLike, \
+    CommentLike
 from settings import notification_key_path, notification_cert_path, image_path
 
 __author__ = 'zhouqi'
@@ -145,21 +146,23 @@ class CommentListHandler(BaseHandler):
 class PieceLikeHandler(BaseHandler):
     @check_token
     def post(self, piece_id):
-        status = self.get_argument('status')
+        piece_id = int(piece_id)
+        status = int(self.get_argument('status'))
 
-        comment = Comment()
-        comment_id = comment.create(self.user_id, piece_id, comment_text)
-        self.write({'comment_id': comment_id})
+        like = PieceLike()
+        result = like.like(piece_id, self.user_id, status)
+        self.write({'result': result})
 
 
 class CommentLikeHandler(BaseHandler):
     @check_token
-    def post(self, piece_id):
-        comment_text = self.get_argument('comment_text')
+    def post(self, comment_id):
+        comment_id = int(comment_id)
+        status = int(self.get_argument('status'))
 
-        comment = Comment()
-        comment_id = comment.create(self.user_id, piece_id, comment_text)
-        self.write({'comment_id': comment_id})
+        like = CommentLike()
+        result = like.like(comment_id, self.user_id, status)
+        self.write({'result': result})
 
 
 class UploadHandler(BaseHandler):

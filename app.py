@@ -4,7 +4,8 @@ from tornado import web
 from tornado.ioloop import IOLoop
 from handlers import DefaultHandler, UploadHandler, PieceHandler, ChannelHandler, \
     ChannelDetailHandler, ChannelPieceListHandler, SelfProfileHandler, UserProfileHandler, \
-    RegisterHandler, LoginHandler, CommentHandler, CommentListHandler
+    RegisterHandler, LoginHandler, CommentHandler, CommentListHandler, PieceLikeHandler, \
+    CommentLikeHandler
 from settings import app_port, url_pre
 
 __author__ = 'zhouqi'
