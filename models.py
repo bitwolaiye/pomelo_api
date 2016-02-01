@@ -246,6 +246,8 @@ class Comment(object):
             cur = db.cursor()
             sql = "insert into comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING comment_id;"
             cur.execute(sql, (piece_id, user_id, comment_text))
+            sql = 'update pieces SET comment_cnt=comment_cnt+1 WHERE piece_id=%s;'
+            cur.execute(sql, (piece_id, ))
             return cur.fetchone()[0]
 
     def list(self, piece_id, page=None, row_per_page=None):
