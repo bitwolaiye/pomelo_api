@@ -5,7 +5,7 @@ from tornado.ioloop import IOLoop
 from handlers import DefaultHandler, UploadHandler, PieceHandler, ChannelHandler, \
     ChannelDetailHandler, ChannelPieceListHandler, SelfProfileHandler, UserProfileHandler, \
     RegisterHandler, LoginHandler, CommentHandler, CommentListHandler, PieceLikeHandler, \
-    CommentLikeHandler
+    CommentLikeHandler, ChangePasswordHandler
 from settings import app_port, url_pre
 
 __author__ = 'zhouqi'
@@ -13,6 +13,7 @@ __author__ = 'zhouqi'
 routs = [
     (r"/api/v1/user/login", LoginHandler),
     (r"/api/v1/user/register", RegisterHandler),
+    (r"/api/v1/user/password", ChangePasswordHandler),
     (r"/api/v1/user/([0-9]+)", UserProfileHandler),
     (r"/api/v1/user", SelfProfileHandler),
 

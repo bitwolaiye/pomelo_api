@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import hashlib
 import os
 import random
 import shutil
@@ -87,27 +88,69 @@ class User(object):
             else:
                 return -1
 
-    def login(self, user_id):
+    def login(self, user_id, user_password):
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select * from users where user_id=%s', [user_id])
-            cur.fetchall()
-        self.check_password()
-        token = Token().update(user_id, 0)
-        return token
+            cur.execute('select user_password from users where user_id=%s', [user_id])
+            res = cur.fetchall()
+        password = res[0][0]
+        if self.check_password(password, user_password):
+            token = Token().update(user_id, 0)
+            return token
+        else:
+            return None
 
-    def check_password(self):
-        return True
+    def check_password(self, password, input_password):
+        if password is None or input_password is None:
+            return False
+        if len(password) == 1 and password == '!':
+            return False
+        if len(password) == 2 and password == '!!':
+            return True
+        array = password.split('$')
+        if len(array) != 3:
+            return False
+        hash_method = array[0]
+        salt = array[1]
+        hashed = array[2]
+        h = hashlib.new(hash_method)
+        h.update(salt)
+        h.update(input_password)
+        return h.hexdigest() == hashed
 
-    def register(self, user_name):
-        user_id = 10000
+    def gen_password(self, input_password):
+        hash_method = 'sha1'
+        salt = hex(random.randint(0,16777216))[2:]
+        h = hashlib.new(hash_method)
+        h.update(salt)
+        h.update(input_password)
+        return '$'.join([hash_method, salt, h.hexdigest()])
+
+    def register(self, user_name, user_password):
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('insert INTO users(user_name) VALUES (%s) RETURNING user_id;', [user_name, ])
+            cur.execute(
+                'insert INTO users(user_name, nick_name, user_password) VALUES (%s, %s, %s) RETURNING user_id;',
+                [user_name, user_name, self.gen_password(user_password)])
             res = cur.fetchall()
             user_id = res[0][0]
+            db.commit()
         token = Token().update(user_id, 0)
         return user_id, token
+
+    def change_password(self, user_id, user_password, new_password):
+        with connection.gen_db() as db:
+            cur = db.cursor()
+            cur.execute('select user_password from users where user_id=%s', [user_id])
+            res = cur.fetchall()
+            password = res[0][0]
+            if self.check_password(password, user_password):
+                cur.execute('update users set user_password=%s WHERE user_id=%s;',
+                            [self.gen_password(new_password), user_id])
+                db.commit()
+                return True
+            else:
+                return False
 
     def get_profile(self, user_id):
         with connection.gen_db() as db:

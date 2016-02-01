@@ -49,11 +49,15 @@ class DefaultHandler(BaseHandler):
 class LoginHandler(BaseHandler):
     def post(self):
         user_name = self.get_argument('user_name')
+        user_password = self.get_argument('user_password')
         user = User()
         user_id = user.get_user_id_from_name(user_name)
         if user_id > 0:
-            token = user.login(user_id)
-            self.write({'user_id': user_id, 'token': token})
+            token = user.login(user_id, user_password)
+            if token is not None:
+                self.write({'user_id': user_id, 'token': token})
+            else:
+                self.write({'err_no': 1, 'err_msg': 'password is wrong'})
         else:
             self.write({'err_no': 1, 'err_msg': 'user is not exists'})
 
@@ -61,9 +65,23 @@ class LoginHandler(BaseHandler):
 class RegisterHandler(BaseHandler):
     def post(self):
         user_name = self.get_argument('user_name')
+        user_password = self.get_argument('user_password')
         user = User()
-        user_id, token = user.register(user_name)
+        user_id, token = user.register(user_name, user_password)
         self.write({'user_id': user_id, 'token': token})
+
+
+class ChangePasswordHandler(BaseHandler):
+    def post(self):
+        user_name = self.get_argument('user_name')
+        user_password = self.get_argument('user_password')
+        new_password = self.get_argument('new_password')
+        user = User()
+        user_id = user.get_user_id_from_name(user_name)
+        if user_id > 0:
+            self.write({'result': user.change_password(user_id, user_password, new_password)})
+        else:
+            self.write({'err_no': 1, 'err_msg': 'user is not exists'})
 
 
 class UserProfileHandler(BaseHandler):
