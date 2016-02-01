@@ -293,7 +293,7 @@ class Comment(object):
             sql = 'update pieces SET comment_cnt=comment_cnt+1 WHERE piece_id=%s;'
             cur.execute(sql, (piece_id, ))
             sql = 'select user_id from pieces where piece_id=%s;'
-            cur.execute(sql, (piece_id, user_id))
+            cur.execute(sql, (piece_id, ))
             piece_user_id = cur.fetchone()[0]
             if piece_user_id != user_id:
                 Message.add_message(cur, piece_user_id, Message.piece_comment, {'user_id': user_id, 'piece_id': piece_id})
