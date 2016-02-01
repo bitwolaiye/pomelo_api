@@ -47,6 +47,7 @@ class Connection(object):
         """Closes the existing database connection and re-opens it."""
         self.close()
         self._db = psycopg2.connect(self._db_args)
+        self._db.set_client_encoding('utf-8')
 
     def _ensure_connected(self):
         # PostgreSQL by default closes client connections that are idle for
