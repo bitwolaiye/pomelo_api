@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import hashlib
+import json
 import os
 import random
 import shutil
@@ -291,6 +292,11 @@ class Comment(object):
             cur.execute(sql, (piece_id, user_id, comment_text))
             sql = 'update pieces SET comment_cnt=comment_cnt+1 WHERE piece_id=%s;'
             cur.execute(sql, (piece_id, ))
+            sql = 'select user_id from pieces where piece_id=%s;'
+            cur.execute(sql, (piece_id, user_id))
+            piece_user_id = cur.fetchone()[0]
+            if piece_user_id != user_id:
+                Message.add_message(cur, piece_user_id, Message.piece_comment, {'user_id': user_id, 'piece_id': piece_id})
             return cur.fetchone()[0]
 
     def list(self, piece_id, page=None, row_per_page=None):
@@ -317,9 +323,12 @@ class PieceLike(object):
             return False
         with connection.gen_db() as db:
             cur = db.cursor()
-            res = cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id]).fetchall()
+            cur.execute('select user_id from pieces where piece_id=%s;', (piece_id, ))
+            piece_user_id = cur.fetchone()[0]
+            cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id]).fetchall()
+            res = cur.fetchall()
             if len(res) == 1:
-                cur_status = res[0][1]
+                cur_status = res[0][0]
                 if status == cur_status:
                     pass
                 else:
@@ -333,6 +342,8 @@ class PieceLike(object):
                 if status == 1:
                     cur.execute('insert INTO piece_likes(piece_id, user_id, status) VALUES (%s, %s, %s);', [piece_id, user_id, status])
                     cur.execute('update pieces set like_cnt=like_cnt+1 WHERE piece_id=%s', [piece_id])
+                    if piece_user_id != user_id:
+                        Message.add_message(cur, piece_user_id, Message.comment_liked, {'piece_id': piece_id, 'user_id': user_id})
             db.commit()
         return True
 
@@ -343,9 +354,12 @@ class CommentLike(object):
             return False
         with connection.gen_db() as db:
             cur = db.cursor()
-            res = cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id]).fetchall()
+            cur.execute('select user_id from comments where comment_id=%s;', (comment_id, ))
+            comment_user_id = cur.fetchone()[0]
+            cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id]).fetchall()
+            res = cur.fetchall()
             if len(res) == 1:
-                cur_status = res[0][1]
+                cur_status = res[0][0]
                 if status == cur_status:
                     pass
                 else:
@@ -359,6 +373,8 @@ class CommentLike(object):
                 if status == 1:
                     cur.execute('insert INTO comment_likes(comment_id, user_id, status) VALUES (%s, %s, %s);', [comment_id, user_id, status])
                     cur.execute('update comments set like_cnt=like_cnt+1 WHERE comment_id=%s', [comment_id])
+                    if comment_user_id != user_id:
+                        Message.add_message(cur, comment_user_id, Message.comment_liked, {'comment_id': comment_id, 'user_id': user_id})
             db.commit()
         return True
 
@@ -427,6 +443,24 @@ class Token():
         self.db.put(self._token_key_pre + struct.pack('<Q', num), struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
         self.db.put(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id), struct.pack('<Q', num))
         return base62_encode(num)
+
+class Message(object):
+    system_notice = 1
+    piece_comment = 2
+    piece_liked = 3
+    comment_liked = 4
+    message_type_dict = {
+        1: 'system notice',
+        2: 'piece comment',
+        3: 'piece liked',
+        4: 'comment liked'
+        # @ follow sms
+    }
+    @staticmethod
+    def add_message(cls, cur, user_id, message_type, message_json):
+        cur.execute(
+            "insert into messages(message_type, message_json, message_time, user_id) VALUES (%s, now() AT TIME ZONE 'UTC-0', %s, %s)",
+            [message_type, json.dump(message_json, separators=(',', ':')), user_id])
 
 
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

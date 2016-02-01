@@ -183,6 +183,12 @@ class CommentLikeHandler(BaseHandler):
         self.write({'result': result})
 
 
+class MessageHandler(BaseHandler):
+    @check_token
+    def get(self):
+        pass
+
+
 class UploadHandler(BaseHandler):
     @check_token
     def post(self):

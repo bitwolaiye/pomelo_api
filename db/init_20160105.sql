@@ -68,6 +68,7 @@ CREATE TABLE messages
   message_id   SERIAL    NOT NULL,
   message_json TEXT      NOT NULL,
   message_time TIMESTAMP NOT NULL,
+  message_type SMALLINT  NOT NULL DEFAULT 1,
   user_id      INTEGER   NOT NULL REFERENCES users ON DELETE CASCADE,
   PRIMARY KEY (message_id)
 );
