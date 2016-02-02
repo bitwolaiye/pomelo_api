@@ -326,7 +326,7 @@ class PieceLike(object):
             cur = db.cursor()
             cur.execute('select user_id from pieces where piece_id=%s;', (piece_id, ))
             piece_user_id = cur.fetchone()[0]
-            cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id]).fetchall()
+            cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id])
             res = cur.fetchall()
             if len(res) == 1:
                 cur_status = res[0][0]
@@ -357,7 +357,7 @@ class CommentLike(object):
             cur = db.cursor()
             cur.execute('select user_id from comments where comment_id=%s;', (comment_id, ))
             comment_user_id = cur.fetchone()[0]
-            cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id]).fetchall()
+            cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id])
             res = cur.fetchall()
             if len(res) == 1:
                 cur_status = res[0][0]
