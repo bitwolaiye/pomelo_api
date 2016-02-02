@@ -460,7 +460,7 @@ class Message(object):
     @staticmethod
     def add_message(cur, user_id, message_type, message_json):
         cur.execute(
-            "insert into messages(message_type, message_json, message_time, user_id) VALUES (%s, now() AT TIME ZONE 'UTC-0', %s, %s)",
+            "insert into messages(message_type, message_json, message_time, user_id) VALUES (%s, %s, now() AT TIME ZONE 'UTC-0', %s)",
             [message_type, json.dumps(message_json, separators=(',', ':')), user_id])
 
 
