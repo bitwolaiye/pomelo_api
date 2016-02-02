@@ -458,7 +458,7 @@ class Message(object):
         # @ follow sms
     }
     @staticmethod
-    def add_message(cls, cur, user_id, message_type, message_json):
+    def add_message(cur, user_id, message_type, message_json):
         cur.execute(
             "insert into messages(message_type, message_json, message_time, user_id) VALUES (%s, now() AT TIME ZONE 'UTC-0', %s, %s)",
             [message_type, json.dump(message_json, separators=(',', ':')), user_id])
