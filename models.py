@@ -245,8 +245,8 @@ class Channel(object):
 
 
 class Piece(object):
-    piece_list_fields = ['piece_id', 'piece_text', 'piece_time', 'comment_cnt', 'like_cnt', 'user_id', 'user_name', 'user_gender', 'user_avatar']
-    piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 5), (6, 8)])
+    piece_list_fields = ['piece_id', 'piece_text', 'piece_time', 'piece_pic', 'comment_cnt', 'like_cnt', 'user_id', 'user_name', 'user_gender', 'user_avatar']
+    piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 6), (7, 9)])
 
     def create(self, user_id, channel_id, piece_text, piece_pic=None, piece_voice=None,
                piece_video=None):
