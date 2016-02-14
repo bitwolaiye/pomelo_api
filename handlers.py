@@ -136,9 +136,10 @@ class PieceHandler(BaseHandler):
     def post(self):
         channel_id = self.get_argument('channel_id')
         piece_text = self.get_argument('piece_text')
+        piece_pic = self.get_argument('piece_pic', None)
 
         piece = Piece()
-        piece_id = piece.create(self.user_id, channel_id, piece_text)
+        piece_id = piece.create(self.user_id, channel_id, piece_text, piece_pic=piece_pic)
         self.write({'piece_id': piece_id})
 
 

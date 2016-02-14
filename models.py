@@ -253,11 +253,51 @@ class Piece(object):
         user_id = int(user_id)
         channel_id = int(channel_id)
 
+        if piece_pic is not None:
+            pre = piece_pic.split('.')[-2][-3:]
+            src_path = '/'.join([image_path, 'tmp', pre, piece_pic])
+            if os.path.exists(src_path):
+                dst_path = '/'.join([image_path, 'piece', 'origin', pre, piece_pic])
+                thumb_path = '/'.join([image_path, 'piece', 'thumb', pre, piece_pic])
+                for p in [dst_path, thumb_path]:
+                    sub = p.split('/')
+                    for i in xrange(len(sub) - 1):
+                        sub_p = '/'.join(sub[:i + 1])
+                        if not os.path.exists(sub_p):
+                            os.mkdir(sub_p)
+                # shutil.move(src_path, dst_path)
+                image = Image.open(src_path)
+                origin_size = image.size
+                if origin_size[0] > origin_size[1]:
+                    delta = (origin_size[0] - origin_size[1]) /2
+                    image = image.crop((delta, 0, origin_size[0] - delta, origin_size[1]))
+                elif origin_size[0] < origin_size[1]:
+                    delta = (origin_size[1] - origin_size[0]) /2
+                    image = image.crop((0, delta, origin_size[0], origin_size[1] - delta))
+                if origin_size[0] > 612:
+                    height = origin_size[1] * 1.0 / origin_size[0] * 612
+                    width = 612
+                    image.thumbnail((width, height))
+                image.save(dst_path)
+                os.remove(src_path)
+                origin_size = image.size
+                width, height = origin_size
+                if origin_size[0] > 150:
+                    height = origin_size[1] * 1.0 / origin_size[0] * 150
+                    width = 150
+                    image.thumbnail((width, height))
+                image.save(thumb_path, 'JPEG')
+
         with connection.gen_db() as db:
             cur = db.cursor()
             sql = "insert into pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING piece_id;"
             cur.execute(sql, (channel_id, user_id, piece_text))
-            return cur.fetchone()[0]
+            piece_id = cur.fetchone()[0]
+            if piece_pic is not None:
+                sql = 'update pieces set piece_pic=%s where pieces.piece_id=%s;'
+                cur.execute(sql, [piece_pic, piece_id])
+            db.commit()
+            return piece_id
 
     def list(self, channel_id, page=None, row_per_page=None):
         if page is None: page = 1
