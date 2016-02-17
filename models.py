@@ -333,7 +333,7 @@ class Piece(object):
                       '  ORDER BY piece_id DESC '
                 cur.execute(sql, [channel_id, user_id])
                 res = cur.fetchall()
-                update_result(result, dict([(row[0], {'is_like': row[1]}) for row in res]), 'piece_id', 'is_like')
+                update_result(result, dict([(row[0], {'is_like': row[1]}) for row in res]), 'piece_id', ['is_like'])
         return result
 
 
