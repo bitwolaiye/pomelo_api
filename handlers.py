@@ -123,12 +123,13 @@ class ChannelDetailHandler(BaseHandler):
 
 
 class ChannelPieceListHandler(BaseHandler):
+    @check_token
     def get(self, channel_id):
         page = self.get_argument('page', None)
         row_per_page = self.get_argument('row_per_page', None)
 
         piece = Piece()
-        self.write({'list': piece.list(channel_id, page, row_per_page)})
+        self.write({'list': piece.list(channel_id, self.user_id, page, row_per_page)})
 
 
 class PieceHandler(BaseHandler):

@@ -327,7 +327,7 @@ class Piece(object):
             res = cur.fetchall()
             result = format_records_to_json(self.piece_list_fields, res)
             [each.update({'is_like': 0}) for each in result]
-            if user_id is not None:
+            if user_id is not None & user_id > 0:
                 sql = 'SELECT a.piece_id, a.status is_like FROM piece_likes a, pieces b ' \
                       '  WHERE a.piece_id=b.piece_id AND b.channel_id=%s AND a.user_id=%s ' \
                       '  ORDER BY piece_id DESC '
