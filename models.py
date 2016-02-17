@@ -35,6 +35,20 @@ def ensure_type(obj):
         return obj
 
 
+def _to_alias(aliases, i, default):
+    if aliases is None or len(aliases) <= i or aliases[i] is None:
+        return default
+    else:
+        return aliases[i]
+
+
+def update_result(result, source_dict, key_field, fields, aliases=None):
+    for each in result:
+        if each[key_field] in source_dict:
+            for index, field in enumerate(fields):
+                each.update({_to_alias(aliases, index, field): source_dict[each[key_field]][field]})
+
+
 def format_records_to_json(fields, res, aliases=None):
     """
     format pg records to json obj
@@ -43,18 +57,11 @@ def format_records_to_json(fields, res, aliases=None):
     :param aliases: json field alias
     :return: [{}, ... {}]
     """
-
-    def _to_alias(aliases, i, default):
-        if aliases is None or len(aliases) <= i or aliases[i] is None:
-            return default
-        else:
-            return aliases[i]
-
     result = []
     for row in res:
         result.append(
-                dict([(_to_alias(aliases, index, field), ensure_type(row[index]))
-                      for index, field in enumerate(fields)]))
+            dict([(_to_alias(aliases, index, field), ensure_type(row[index]))
+                  for index, field in enumerate(fields)]))
     return result
 
 
@@ -82,7 +89,7 @@ class User(object):
     def get_user_id_from_name(self, user_name):
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select user_id from users where user_name=%s', [user_name])
+            cur.execute('SELECT user_id FROM users WHERE user_name=%s', [user_name])
             res = cur.fetchall()
             if len(res) == 1:
                 return res[0][0]
@@ -92,7 +99,7 @@ class User(object):
     def login(self, user_id, user_password):
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select user_password from users where user_id=%s', [user_id])
+            cur.execute('SELECT user_password FROM users WHERE user_id=%s', [user_id])
             res = cur.fetchall()
         password = res[0][0]
         if self.check_password(password, user_password):
@@ -121,7 +128,7 @@ class User(object):
 
     def gen_password(self, input_password):
         hash_method = 'sha1'
-        salt = hex(random.randint(0,16777216))[2:]
+        salt = hex(random.randint(0, 16777216))[2:]
         h = hashlib.new(hash_method)
         h.update(salt)
         h.update(input_password)
@@ -131,7 +138,7 @@ class User(object):
         with connection.gen_db() as db:
             cur = db.cursor()
             cur.execute(
-                'insert INTO users(user_name, nick_name, user_password) VALUES (%s, %s, %s) RETURNING user_id;',
+                'INSERT INTO users(user_name, nick_name, user_password) VALUES (%s, %s, %s) RETURNING user_id;',
                 [user_name, user_name, self.gen_password(user_password)])
             res = cur.fetchall()
             user_id = res[0][0]
@@ -142,11 +149,11 @@ class User(object):
     def change_password(self, user_id, user_password, new_password):
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select user_password from users where user_id=%s', [user_id])
+            cur.execute('SELECT user_password FROM users WHERE user_id=%s', [user_id])
             res = cur.fetchall()
             password = res[0][0]
             if self.check_password(password, user_password):
-                cur.execute('update users set user_password=%s WHERE user_id=%s;',
+                cur.execute('UPDATE users SET user_password=%s WHERE user_id=%s;',
                             [self.gen_password(new_password), user_id])
                 db.commit()
                 return True
@@ -171,7 +178,8 @@ class User(object):
             res = cur.fetchall()
         return format_records_to_json(self.self_profile_fields, res)[0]
 
-    def update_profile(self, user_id, user_name=None, user_password=None, user_gender=None, user_avatar=None):
+    def update_profile(self, user_id, user_name=None, user_password=None, user_gender=None,
+                       user_avatar=None):
         if user_avatar is not None:
             pre = user_avatar.split('.')[-2][-3:]
             src_path = '/'.join([image_path, 'tmp', pre, user_avatar])
@@ -188,10 +196,10 @@ class User(object):
                 image = Image.open(src_path)
                 origin_size = image.size
                 if origin_size[0] > origin_size[1]:
-                    delta = (origin_size[0] - origin_size[1]) /2
+                    delta = (origin_size[0] - origin_size[1]) / 2
                     image = image.crop((delta, 0, origin_size[0] - delta, origin_size[1]))
                 elif origin_size[0] < origin_size[1]:
-                    delta = (origin_size[1] - origin_size[0]) /2
+                    delta = (origin_size[1] - origin_size[0]) / 2
                     image = image.crop((0, delta, origin_size[0], origin_size[1] - delta))
                 if origin_size[0] > 612:
                     height = origin_size[1] * 1.0 / origin_size[0] * 612
@@ -206,7 +214,7 @@ class User(object):
                     width = 150
                     image.thumbnail((width, height))
                 image.save(thumb_path, 'JPEG')
-                sql = 'update users set user_avatar=%s where user_id=%s;'
+                sql = 'UPDATE users SET user_avatar=%s WHERE user_id=%s;'
                 with connection.gen_db() as db:
                     cur = db.cursor()
                     cur.execute(sql, [user_avatar, user_id])
@@ -215,12 +223,14 @@ class User(object):
 
 
 class Channel(object):
-    chance_detail_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id', 'user_name',
+    chance_detail_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id',
+                            'user_name',
                             'user_gender', 'user_avatar']
     chance_detail_sql_fields = format_sql_fields(chance_detail_fields, [(0, 3), (4, 6)])
 
-    chance_list_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id', 'user_name',
-                            'user_gender', 'user_avatar']
+    chance_list_fields = ['channel_id', 'channel_name', 'channel_avatar', 'channel_user_id',
+                          'user_name',
+                          'user_gender', 'user_avatar']
     chance_list_sql_fields = format_sql_fields(chance_list_fields, [(0, 3), (4, 6)])
 
     def detail(self, channel_id):
@@ -245,7 +255,8 @@ class Channel(object):
 
 
 class Piece(object):
-    piece_list_fields = ['piece_id', 'piece_text', 'piece_time', 'piece_pic', 'comment_cnt', 'like_cnt', 'user_id', 'user_name', 'user_gender', 'user_avatar']
+    piece_list_fields = ['piece_id', 'piece_text', 'piece_time', 'piece_pic', 'comment_cnt',
+                         'like_cnt', 'user_id', 'user_name', 'user_gender', 'user_avatar']
     piece_list_sql_fields = format_sql_fields(piece_list_fields, [(0, 6), (7, 9)])
 
     def create(self, user_id, channel_id, piece_text, piece_pic=None, piece_voice=None,
@@ -269,10 +280,10 @@ class Piece(object):
                 image = Image.open(src_path)
                 origin_size = image.size
                 if origin_size[0] > origin_size[1]:
-                    delta = (origin_size[0] - origin_size[1]) /2
+                    delta = (origin_size[0] - origin_size[1]) / 2
                     image = image.crop((delta, 0, origin_size[0] - delta, origin_size[1]))
                 elif origin_size[0] < origin_size[1]:
-                    delta = (origin_size[1] - origin_size[0]) /2
+                    delta = (origin_size[1] - origin_size[0]) / 2
                     image = image.crop((0, delta, origin_size[0], origin_size[1] - delta))
                 if origin_size[0] > 612:
                     height = origin_size[1] * 1.0 / origin_size[0] * 612
@@ -290,16 +301,16 @@ class Piece(object):
 
         with connection.gen_db() as db:
             cur = db.cursor()
-            sql = "insert into pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING piece_id;"
+            sql = "INSERT INTO pieces(channel_id, user_id, piece_text, piece_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING piece_id;"
             cur.execute(sql, (channel_id, user_id, piece_text))
             piece_id = cur.fetchone()[0]
             if piece_pic is not None:
-                sql = 'update pieces set piece_pic=%s where pieces.piece_id=%s;'
+                sql = 'UPDATE pieces SET piece_pic=%s WHERE pieces.piece_id=%s;'
                 cur.execute(sql, [piece_pic, piece_id])
             db.commit()
             return piece_id
 
-    def list(self, channel_id, page=None, row_per_page=None):
+    def list(self, channel_id, user_id=None, page=None, row_per_page=None):
         if page is None: page = 1
         if row_per_page is None: row_per_page = 20
 
@@ -314,11 +325,21 @@ class Piece(object):
                   ' order by piece_id desc LIMIT %s OFFSET %s;'
             cur.execute(sql, [channel_id, row_per_page, (page - 1) * row_per_page])
             res = cur.fetchall()
-        return format_records_to_json(self.piece_list_fields, res)
+            result = format_records_to_json(self.piece_list_fields, res)
+            [each.update({'is_like': 0}) for each in result]
+            if user_id is not None:
+                sql = 'SELECT a.piece_id, a.status is_like FROM piece_likes a, pieces b ' \
+                      '  WHERE a.piece_id=b.piece_id AND b.channel_id=%s AND a.user_id=%s ' \
+                      '  ORDER BY piece_id DESC '
+                cur.execute(sql, [channel_id, user_id])
+                res = cur.fetchall()
+                update_result(result, dict([(row[0], {'is_like': row[1]}) for row in res]), 'piece_id', 'is_like')
+        return result
 
 
 class Comment(object):
-    comment_list_fields = ['comment_id', 'comment_text', 'comment_time', 'like_cnt', 'user_id', 'user_name', 'user_gender', 'user_avatar']
+    comment_list_fields = ['comment_id', 'comment_text', 'comment_time', 'like_cnt', 'user_id',
+                           'user_name', 'user_gender', 'user_avatar']
     comment_list_sql_fields = format_sql_fields(comment_list_fields, [(0, 4), (5, 7)])
 
     def create(self, user_id, piece_id, comment_text, comment_pic=None, comment_voice=None,
@@ -328,16 +349,17 @@ class Comment(object):
 
         with connection.gen_db() as db:
             cur = db.cursor()
-            sql = "insert into comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING comment_id;"
+            sql = "INSERT INTO comments(piece_id, user_id, comment_text, comment_time) VALUES (%s, %s, %s, now() AT TIME ZONE 'UTC-0') RETURNING comment_id;"
             cur.execute(sql, (piece_id, user_id, comment_text))
             comment_id = cur.fetchone()[0]
-            sql = 'update pieces SET comment_cnt=comment_cnt+1 WHERE piece_id=%s;'
-            cur.execute(sql, (piece_id, ))
-            sql = 'select user_id from pieces where piece_id=%s;'
-            cur.execute(sql, (piece_id, ))
+            sql = 'UPDATE pieces SET comment_cnt=comment_cnt+1 WHERE piece_id=%s;'
+            cur.execute(sql, (piece_id,))
+            sql = 'SELECT user_id FROM pieces WHERE piece_id=%s;'
+            cur.execute(sql, (piece_id,))
             piece_user_id = cur.fetchone()[0]
             if piece_user_id != user_id:
-                Message.add_message(cur, piece_user_id, Message.piece_comment, {'user_id': user_id, 'piece_id': piece_id})
+                Message.add_message(cur, piece_user_id, Message.piece_comment,
+                                    {'user_id': user_id, 'piece_id': piece_id})
             return comment_id
 
     def list(self, piece_id, page=None, row_per_page=None):
@@ -364,9 +386,10 @@ class PieceLike(object):
             return False
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select user_id from pieces where piece_id=%s;', (piece_id, ))
+            cur.execute('SELECT user_id FROM pieces WHERE piece_id=%s;', (piece_id,))
             piece_user_id = cur.fetchone()[0]
-            cur.execute('select status from piece_likes WHERE piece_id=%s and user_id=%s;', [piece_id, user_id])
+            cur.execute('SELECT status FROM piece_likes WHERE piece_id=%s AND user_id=%s;',
+                        [piece_id, user_id])
             res = cur.fetchall()
             if len(res) == 1:
                 cur_status = res[0][0]
@@ -374,17 +397,27 @@ class PieceLike(object):
                     pass
                 else:
                     if status == 1:
-                        cur.execute('update piece_likes set status=%s WHERE piece_id=%s and user_id=%s;', [status, piece_id, user_id])
-                        cur.execute('update pieces set like_cnt=like_cnt+1 WHERE piece_id=%s', [piece_id])
+                        cur.execute(
+                            'UPDATE piece_likes SET status=%s WHERE piece_id=%s AND user_id=%s;',
+                            [status, piece_id, user_id])
+                        cur.execute('UPDATE pieces SET like_cnt=like_cnt+1 WHERE piece_id=%s',
+                                    [piece_id])
                     else:
-                        cur.execute('update piece_likes set status=%s WHERE piece_id=%s and user_id=%s;', [status, piece_id, user_id])
-                        cur.execute('update pieces set like_cnt=like_cnt-1 WHERE piece_id=%s', [piece_id])
+                        cur.execute(
+                            'UPDATE piece_likes SET status=%s WHERE piece_id=%s AND user_id=%s;',
+                            [status, piece_id, user_id])
+                        cur.execute('UPDATE pieces SET like_cnt=like_cnt-1 WHERE piece_id=%s',
+                                    [piece_id])
             else:
                 if status == 1:
-                    cur.execute('insert INTO piece_likes(piece_id, user_id, status) VALUES (%s, %s, %s);', [piece_id, user_id, status])
-                    cur.execute('update pieces set like_cnt=like_cnt+1 WHERE piece_id=%s', [piece_id])
+                    cur.execute(
+                        'INSERT INTO piece_likes(piece_id, user_id, status) VALUES (%s, %s, %s);',
+                        [piece_id, user_id, status])
+                    cur.execute('UPDATE pieces SET like_cnt=like_cnt+1 WHERE piece_id=%s',
+                                [piece_id])
                     if piece_user_id != user_id:
-                        Message.add_message(cur, piece_user_id, Message.comment_liked, {'piece_id': piece_id, 'user_id': user_id})
+                        Message.add_message(cur, piece_user_id, Message.comment_liked,
+                                            {'piece_id': piece_id, 'user_id': user_id})
             db.commit()
         return True
 
@@ -395,9 +428,10 @@ class CommentLike(object):
             return False
         with connection.gen_db() as db:
             cur = db.cursor()
-            cur.execute('select user_id from comments where comment_id=%s;', (comment_id, ))
+            cur.execute('SELECT user_id FROM comments WHERE comment_id=%s;', (comment_id,))
             comment_user_id = cur.fetchone()[0]
-            cur.execute('select status from comment_likes WHERE comment_id=%s and user_id=%s;', [comment_id, user_id])
+            cur.execute('SELECT status FROM comment_likes WHERE comment_id=%s AND user_id=%s;',
+                        [comment_id, user_id])
             res = cur.fetchall()
             if len(res) == 1:
                 cur_status = res[0][0]
@@ -405,23 +439,34 @@ class CommentLike(object):
                     pass
                 else:
                     if status == 1:
-                        cur.execute('update comment_likes set status=%s WHERE comment_id=%s and user_id=%s;', [status, comment_id, user_id])
-                        cur.execute('update comments set like_cnt=like_cnt+1 WHERE comment_id=%s', [comment_id])
+                        cur.execute(
+                            'UPDATE comment_likes SET status=%s WHERE comment_id=%s AND user_id=%s;',
+                            [status, comment_id, user_id])
+                        cur.execute('UPDATE comments SET like_cnt=like_cnt+1 WHERE comment_id=%s',
+                                    [comment_id])
                     else:
-                        cur.execute('update comment_likes set status=%s WHERE comment_id=%s and user_id=%s;', [status, comment_id, user_id])
-                        cur.execute('update comments set like_cnt=like_cnt-1 WHERE comment_id=%s', [comment_id])
+                        cur.execute(
+                            'UPDATE comment_likes SET status=%s WHERE comment_id=%s AND user_id=%s;',
+                            [status, comment_id, user_id])
+                        cur.execute('UPDATE comments SET like_cnt=like_cnt-1 WHERE comment_id=%s',
+                                    [comment_id])
             else:
                 if status == 1:
-                    cur.execute('insert INTO comment_likes(comment_id, user_id, status) VALUES (%s, %s, %s);', [comment_id, user_id, status])
-                    cur.execute('update comments set like_cnt=like_cnt+1 WHERE comment_id=%s', [comment_id])
+                    cur.execute(
+                        'INSERT INTO comment_likes(comment_id, user_id, status) VALUES (%s, %s, %s);',
+                        [comment_id, user_id, status])
+                    cur.execute('UPDATE comments SET like_cnt=like_cnt+1 WHERE comment_id=%s',
+                                [comment_id])
                     if comment_user_id != user_id:
-                        Message.add_message(cur, comment_user_id, Message.comment_liked, {'comment_id': comment_id, 'user_id': user_id})
+                        Message.add_message(cur, comment_user_id, Message.comment_liked,
+                                            {'comment_id': comment_id, 'user_id': user_id})
             db.commit()
         return True
 
 
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
@@ -462,7 +507,8 @@ class Token():
         return struct.unpack('<Q', self.db.get(self._user_key_pre + key))[0]
 
     def exists(self, user_id, device_id):
-        return self.db.get(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id)) is not None
+        return self.db.get(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q',
+                                                                                         device_id)) is not None
 
     def exists_number(self, num):
         return self.db.get(self._token_key_pre + struct.pack('<Q', num)) is not None
@@ -470,20 +516,24 @@ class Token():
     def gen_number(self, user_id, device_id):
         if self.exists(user_id, device_id):
             pass
-        ran = random.randint(0, 1<<64-1)
+        ran = random.randint(0, 1 << 64 - 1)
         while self.exists_number(ran):
-            ran = random.randint(0, 1<<64-1)
+            ran = random.randint(0, 1 << 64 - 1)
         return ran
 
     def update(self, user_id, device_id):
         if self.exists(user_id, device_id):
             num = self.get_number(user_id, device_id)
             self.db.delete(self._token_key_pre + struct.pack('<Q', num))
-            self.db.delete(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
+            self.db.delete(
+                self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
         num = self.gen_number(user_id, device_id)
-        self.db.put(self._token_key_pre + struct.pack('<Q', num), struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
-        self.db.put(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id), struct.pack('<Q', num))
+        self.db.put(self._token_key_pre + struct.pack('<Q', num),
+                    struct.pack('<Q', user_id) + struct.pack('<Q', device_id))
+        self.db.put(self._user_key_pre + struct.pack('<Q', user_id) + struct.pack('<Q', device_id),
+                    struct.pack('<Q', num))
         return base62_encode(num)
+
 
 class Message(object):
     system_notice = 1
@@ -497,14 +547,16 @@ class Message(object):
         4: 'comment liked'
         # @ follow sms
     }
+
     @staticmethod
     def add_message(cur, user_id, message_type, message_json):
         cur.execute(
-            "insert into messages(message_type, message_json, message_time, user_id) VALUES (%s, %s, now() AT TIME ZONE 'UTC-0', %s)",
+            "INSERT INTO messages(message_type, message_json, message_time, user_id) VALUES (%s, %s, now() AT TIME ZONE 'UTC-0', %s)",
             [message_type, json.dumps(message_json, separators=(',', ':')), user_id])
 
 
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 
 def base62_encode(num, alphabet=ALPHABET):
     """Encode a number in Base X
@@ -522,6 +574,7 @@ def base62_encode(num, alphabet=ALPHABET):
         arr.append(alphabet[rem])
     arr.reverse()
     return ''.join(arr)
+
 
 def base62_decode(string, alphabet=ALPHABET):
     """Decode a Base X encoded string into the number
@@ -541,5 +594,3 @@ def base62_decode(string, alphabet=ALPHABET):
         idx += 1
 
     return num
-
-
